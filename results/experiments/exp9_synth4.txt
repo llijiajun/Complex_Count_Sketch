@@ -1,0 +1,3 @@
+[synth zipf1.xzipf1.xzipf1.] truth=9.82441e+17  CCS mean=0.002077  peredge mean=0.001185 med=0.001118 neg=0/100 bias=0.00462  sharedsign mean=1.085 med=1.468 neg=57/100  cubes mean=16.49 med=19.16 neg=51/100
+EXP9_DONE
+C4 0

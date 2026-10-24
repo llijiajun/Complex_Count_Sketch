@@ -1,0 +1,5 @@
+[5star ML userId] truth=1.12047e+19  CCS mean=0.2408 peredge mean=0.06734 med=0.05226 sharedsign mean=1.005 neg=13/24
+[5star ML movieId] truth=1.04417e+22  CCS mean=0.1726 peredge mean=0.06786 med=0.06793 sharedsign mean=0.9314 neg=10/24
+[5star KAS cat] truth=7.87418e+14  CCS mean=7.274 peredge mean=2.324 med=1.753 sharedsign mean=10.28 neg=16/24
+EXP12_DONE
+E12 0

@@ -1,0 +1,13 @@
+loading Kasandr...
+  time-window 1: rows=5914324 distinct-users=124658 peak-f=29834
+  time-window 2: rows=4972926 distinct-users=119460 peak-f=25530
+  time-window 3: rows=4957467 distinct-users=110280 peak-f=58628
+  support overlaps |S1∩S2|=28719 |S1∩S3|=23727 |S2∩S3|=26737
+TIME-WINDOW shards (aligned deployment case): truth J=1.3667e+13  CCS plain: mean=0.0507 med=0.0437  T-MCCS: mean=0.0530 med=0.0482  T<plain win=0.12
+top-3 categories: [17, 4, 15] sizes: [934537, 857656, 769044]
+  category 17: rows=934537 distinct-users=24886 peak-f=17480
+  category 4: rows=857656 distinct-users=28153 peak-f=13540
+  category 15: rows=769044 distinct-users=38507 peak-f=8804
+  support overlaps |S1∩S2|=13045 |S1∩S3|=6542 |S2∩S3|=6231
+CATEGORY verticals (misaligned): truth J=1.87728e+10  CCS plain: mean=0.6174 med=0.5367  T-MCCS: mean=0.5236 med=0.4261  T<plain win=0.67
+ALL_DONE

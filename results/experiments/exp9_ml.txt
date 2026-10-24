@@ -1,0 +1,4 @@
+[3star ML userId] truth=2.11559e+12  CCS mean=0.04525  peredge mean=0.03479 med=0.03376 neg=0/24 bias=0.02  sharedsign mean=1.008 med=1.024 neg=13/24  cubes mean=4.097 med=3.537 neg=13/24
+[3star ML movieId] truth=4.56444e+14  CCS mean=0.03205  peredge mean=0.01812 med=0.01577 neg=0/24 bias=0.0143  sharedsign mean=1.009 med=1.014 neg=13/24  cubes mean=1.653 med=1.343 neg=15/24
+EXP9_DONE
+ML 0

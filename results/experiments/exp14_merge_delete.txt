@@ -1,0 +1,6 @@
+# sites=16 rows=25000095 keys=162541 truth(F3)=5.7121e+13
+(a) merged-vs-central max est gap=2.33e-15  err central=0.2843  err merged=0.2843
+(b) communication: merged=1.05 MB vs stream=140.0 MB -> 134x
+(c) after 10% deletions: max est gap=1.5e-15  err central=0.3658  err merged=0.3658  truth(post)=4.17832e+13
+EXP14_DONE
+E14 0

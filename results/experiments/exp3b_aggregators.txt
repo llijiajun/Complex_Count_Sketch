@@ -1,0 +1,25 @@
+--- p=3 ---
+a=0.0: median=3.7526e-02 mean=2.8487e-02 medofmeans=3.4142e-02 tmccs=3.8432e-02 mean/med=0.76 MoM/med=0.91 T/med=1.024
+a=0.5: median=2.7326e-02 mean=2.1934e-02 medofmeans=2.4603e-02 tmccs=2.6849e-02 mean/med=0.80 MoM/med=0.90 T/med=0.983
+a=0.8: median=9.1780e-03 mean=1.4727e-02 medofmeans=1.2169e-02 tmccs=7.4358e-03 mean/med=1.60 MoM/med=1.33 T/med=0.810
+a=1.0: median=3.6343e-03 mean=1.1224e-02 medofmeans=6.6052e-03 tmccs=2.6293e-03 mean/med=3.09 MoM/med=1.82 T/med=0.723
+a=1.1: median=2.2231e-03 mean=9.7672e-03 medofmeans=4.8597e-03 tmccs=1.5210e-03 mean/med=4.39 MoM/med=2.19 T/med=0.684
+a=1.5: median=3.0575e-04 mean=6.4231e-03 medofmeans=1.3954e-03 tmccs=1.7559e-04 mean/med=21.01 MoM/med=4.56 T/med=0.574
+a=2.0: median=2.2864e-05 mean=3.7158e-03 medofmeans=3.3495e-04 tmccs=1.0555e-05 mean/med=162.52 MoM/med=14.65 T/med=0.462
+--- p=4 ---
+a=0.0: median=1.3541e-01 mean=1.1202e-01 medofmeans=1.3220e-01 tmccs=1.3906e-01 mean/med=0.83 MoM/med=0.98 T/med=1.027
+a=0.5: median=4.7984e-02 mean=3.9627e-02 medofmeans=4.1232e-02 tmccs=4.6610e-02 mean/med=0.83 MoM/med=0.86 T/med=0.971
+a=0.8: median=8.1160e-03 mean=2.3097e-02 medofmeans=1.5507e-02 tmccs=7.0345e-03 mean/med=2.85 MoM/med=1.91 T/med=0.867
+a=1.0: median=2.2563e-03 mean=1.6644e-02 medofmeans=7.4908e-03 tmccs=1.9732e-03 mean/med=7.38 MoM/med=3.32 T/med=0.875
+a=1.1: median=1.1502e-03 mean=1.3992e-02 medofmeans=5.1501e-03 tmccs=1.0166e-03 mean/med=12.17 MoM/med=4.48 T/med=0.884
+a=1.5: median=8.8321e-05 mean=7.9767e-03 medofmeans=1.2073e-03 tmccs=7.5204e-05 mean/med=90.31 MoM/med=13.67 T/med=0.851
+a=2.0: median=8.1148e-07 mean=4.4358e-03 medofmeans=2.0794e-04 tmccs=5.9293e-07 mean/med=5466.24 MoM/med=256.25 T/med=0.731
+--- p=5 ---
+a=0.0: median=5.8258e-01 mean=5.7205e-01 medofmeans=6.2231e-01 tmccs=5.9252e-01 mean/med=0.98 MoM/med=1.07 T/med=1.017
+a=0.5: median=7.1573e-02 mean=6.7118e-02 medofmeans=5.9009e-02 tmccs=7.2492e-02 mean/med=0.94 MoM/med=0.82 T/med=1.013
+a=0.8: median=9.0245e-03 mean=3.2460e-02 medofmeans=1.8627e-02 tmccs=8.9621e-03 mean/med=3.60 MoM/med=2.06 T/med=0.993
+a=1.0: median=2.8958e-03 mean=2.1766e-02 medofmeans=8.9196e-03 tmccs=2.7166e-03 mean/med=7.52 MoM/med=3.08 T/med=0.938
+a=1.1: median=1.6712e-03 mean=1.7852e-02 medofmeans=6.1490e-03 tmccs=1.5373e-03 mean/med=10.68 MoM/med=3.68 T/med=0.920
+a=1.5: median=1.7335e-04 mean=1.0081e-02 medofmeans=1.6558e-03 tmccs=1.5783e-04 mean/med=58.15 MoM/med=9.55 T/med=0.910
+a=2.0: median=6.2015e-06 mean=5.0276e-03 medofmeans=3.3425e-04 tmccs=4.6378e-06 mean/med=810.71 MoM/med=53.90 T/med=0.748
+EXP3B_DONE

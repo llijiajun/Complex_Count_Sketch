@@ -1,0 +1,9 @@
+keys=7630927  F3 errors of tasks: F3(A),F3(B),F3(C),J2(A,B),J3(A,B,C)
+F3A: truth=9.8099e+17  mean=0.04115 med=0.009883
+F3B: truth=9.856e+17  mean=0.04114 med=0.0101
+F3C: truth=9.8074e+17  mean=0.04134 med=0.01017
+J2: truth=1.3411e+12  mean=0.02554 med=0.004445
+J3: truth=9.8244e+17  mean=0.04121 med=0.01005
+memory: 3 sketches = 0.79 MB (complex double); exact F3 array over D=7630927 keys = 30.5 MB
+EXP18_DONE
+E18 0

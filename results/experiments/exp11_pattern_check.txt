@@ -1,0 +1,13 @@
+=== (a) p-star counter-example, exact pattern enumeration ===
+H=7 w=100: exact=6.9776  formula=6.9776  reldiff=6.36e-16
+H=7 w=1000: exact=0.135926  formula=0.135926  reldiff=6.53e-15
+H=7 w=10000: exact=0.00797426  formula=0.00797426  reldiff=1.12e-13
+H=50 w=100: exact=782225  formula=782225  reldiff=4.46e-16
+H=50 w=1000: exact=7825.625  formula=7825.625  reldiff=5.81e-16
+H=50 w=10000: exact=78.59375  formula=78.59375  reldiff=3.62e-16
+=== (b) pair-bucket variance == Mix^2/2, arbitrary columns ===
+random column triples tested: 20, mismatches: 0
+=== (c) one-item-per-column triple bucket == (A1 A2 A3)^2 / 2 ===
+A,B,C=2.0,3.0,5.0: exact=450.000000  (ABC)^2/2=450.000000
+A,B,C=7.0,7.0,7.0: exact=58824.500000  (ABC)^2/2=58824.500000
+EXP11_DONE

@@ -1,0 +1,18 @@
+=== (a) 95% CIs, 30 repetitions (Table 2 synthetic protocol) ===
+uniform p=3: CCS mean=9.294e-02 CI95=[6.602e-02,1.199e-01]
+uniform p=4: CCS mean=6.742e-01 CI95=[5.133e-01,8.351e-01]
+uniform p=5: CCS mean=5.965e+00 CI95=[4.393e+00,7.537e+00]
+zipf1.1 p=3: CCS mean=2.062e-03 CI95=[1.208e-03,2.916e-03]
+zipf1.1 p=4: CCS mean=1.488e-03 CI95=[1.008e-03,1.968e-03]
+zipf1.1 p=5: CCS mean=2.001e-03 CI95=[1.151e-03,2.850e-03]
+zipf1.5 p=3: CCS mean=1.232e-04 CI95=[8.529e-05,1.611e-04]
+zipf1.5 p=4: CCS mean=9.632e-05 CI95=[5.037e-05,1.423e-04]
+zipf1.5 p=5: CCS mean=1.675e-04 CI95=[6.397e-05,2.710e-04]
+mix p=3: CCS mean=4.166e-03 CI95=[2.936e-03,5.395e-03]
+mix p=4: CCS mean=4.131e-03 CI95=[2.861e-03,5.401e-03]
+mix p=5: CCS mean=5.676e-03 CI95=[4.072e-03,7.280e-03]
+=== (b) w-sensitivity sweep, zipf1.1, d=64, mean of 10 ===
+  p=3:  w=128:6.322e-03  w=256:3.017e-03  w=512:1.712e-03  w=1024:8.424e-04  w=2048:3.311e-04
+  p=4:  w=128:2.900e-03  w=256:1.630e-03  w=512:7.061e-04  w=1024:3.274e-04  w=2048:1.600e-04
+  p=5:  w=128:5.053e-03  w=256:1.774e-03  w=512:1.153e-03  w=1024:3.737e-04  w=2048:1.923e-04
+EXP8_EXIT 0

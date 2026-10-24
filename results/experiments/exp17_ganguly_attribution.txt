@@ -1,0 +1,5 @@
+zipf1.1   G-preset/mean=4.675e-03  G-preset/median=5.957e-03  CCS-split/mean=3.945e-03  CCS-split/median=5.600e-04  alloc-only=10.6x  agg-only=1.27x
+zipf1.5   G-preset/mean=2.549e-03  G-preset/median=1.001e-03  CCS-split/mean=1.987e-03  CCS-split/median=5.157e-05  alloc-only=19.4x  agg-only=0.39x
+uniform   G-preset/mean=6.364e-02  G-preset/median=7.394e-02  CCS-split/mean=1.348e-02  CCS-split/median=2.509e-02  alloc-only=2.9x  agg-only=1.16x
+mix       G-preset/mean=4.808e-03  G-preset/median=6.481e-03  CCS-split/mean=3.879e-03  CCS-split/median=8.743e-04  alloc-only=7.4x  agg-only=1.35x
+EXP17_DONE

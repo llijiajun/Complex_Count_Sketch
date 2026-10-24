@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Generated: outputs of experiments/run_all.py.
+# (The archived production logs under results/ are part of the artifact and
+#  are NOT ignored -- only the fresh *.out files this port writes.)
+results/*.out
+
+# NOTE: data/ (409 MB) is intentionally committed.  In particular
+# data/lp/*.gz (169 MB) is NOT regenerable -- the original generator drew
+# 10^7 values per column from an unseeded random.randint / np.random.zipf,
+# so these files are the only record of the streams behind Tables 2 and 4.
+# Do not add data/lp/ here.
+
+# C++ build products and the datasets materialised by experiments/exp5
+*.o
+a.out
+cpp/join2/datasets/
+cpp/lp_norm/datasets/

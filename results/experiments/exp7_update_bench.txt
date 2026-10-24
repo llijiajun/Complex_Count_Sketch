@@ -1,0 +1,3 @@
+CountSketch        : 72.5122 M items/s  (0.0137908 s for 1000000 inserts)
+ComplexCountSketch : 15.3292 M items/s  (0.065235 s for 1000000 inserts)
+AMS (sample-count) : 4.41538 M items/s  (0.226481 s for 1000000 inserts)

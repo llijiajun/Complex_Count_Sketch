@@ -1,0 +1,13 @@
+# alpha, L, mean rel err, Psi (= sum Mix^2/(2J^2)), J
+alpha=0.8 L=0.00 err=0.007791 psi=5.818 J=1.76815e+15
+alpha=0.8 L=0.25 err=0.009443 psi=4.059 J=1.31885e+15
+alpha=0.8 L=0.50 err=0.06216 psi=215.6 J=3.83982e+13
+alpha=0.8 L=0.75 err=0.3467 psi=1.469e+04 J=1.16418e+13
+alpha=0.8 L=1.00 err=0.1294 psi=63.82 J=6.21967e+12
+alpha=1.5 L=0.00 err=0.0002937 psi=1.34 J=4.98436e+17
+alpha=1.5 L=0.25 err=0.0002144 psi=0.4201 J=4.72758e+17
+alpha=1.5 L=0.50 err=0.03171 psi=1.783e+04 J=3.47219e+14
+alpha=1.5 L=0.75 err=1.877 psi=5.521e+08 J=1.5597e+13
+alpha=1.5 L=1.00 err=1.937 psi=4.148e+04 J=4.12442e+11
+EXP13_DONE
+E13 0

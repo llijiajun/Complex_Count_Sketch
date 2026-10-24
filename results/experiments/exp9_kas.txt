@@ -1,0 +1,4 @@
+[3star KAS time] truth=1.3667e+13  CCS mean=0.04488  peredge mean=0.03153 med=0.02256 neg=0/24 bias=0.0278  sharedsign mean=1.021 med=1 neg=12/24  cubes mean=6.573 med=5.807 neg=18/24
+[3star KAS cat] truth=1.87728e+10  CCS mean=0.6306  peredge mean=0.5066 med=0.3754 neg=3/24 bias=0.603  sharedsign mean=1.044 med=0.9734 neg=12/24  cubes mean=115.1 med=105.8 neg=14/24
+EXP9_DONE
+KAS 0
