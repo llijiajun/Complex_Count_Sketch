@@ -14,7 +14,7 @@ python3 examples/one_deployment.py   # ~2 s   one sketch, three tasks
 ```
 
 Then the paper's tables and the other 16 experiments live in `../tables/` and
-`../experiments/`; the reconciliation notebook is `../notebooks/`.
+`../experiments/`.
 
 ## The API in three lines
 

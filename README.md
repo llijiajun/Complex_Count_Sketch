@@ -28,9 +28,6 @@ Complex_Count_Sketch/
 │   ├── figures.py               Figure 1 (width sweep) + Figure 2 (regime)
 │   └── figs_out/                rendered figures (PDF + PNG)
 ├── experiments/         # the paper's other 16 experiments (exp2..exp18)
-├── notebooks/
-│   ├── paper_tables.ipynb   reconciliation notebook (source + live run)
-│   └── build_notebook.py    generator for that notebook
 ├── cpp/                 # original 2024 C++ pipeline (Table 2, Table 5 ref.)
 ├── data/                # all data (409 MB, gzip column views, byte-identical)
 └── results/             # archived production logs + this port's outputs
@@ -70,9 +67,6 @@ python3 experiments/run_all.py             # everything (~2.5 h)
 # --- C++ (needs g++) ----------------------------------------------------
 bash experiments/exp5_join2_matched.sh     # JoinSketch at matched budget, ~6 min
 bash experiments/exp7_update_bench.sh      # update throughput, ~1 min
-
-# --- reconciliation notebook --------------------------------------------
-jupyter lab notebooks/paper_tables.ipynb   # ships with all outputs
 ```
 
 Every table script ends by printing a **facsimile** of the published table:
@@ -165,7 +159,7 @@ plaintext datasets the C++ pipeline reads (~2 GB) are not bundled;
 `experiments/exp5_join2_matched.sh` shows how to materialise one on the fly
 from the bundled gzip columns.
 
-## Reproduction status (measured 2026-10-23)
+## Reproduction status 
 
 **Bit-exact**
 
@@ -176,11 +170,9 @@ from the bundled gzip columns.
 | Table 4 | after the fix below, 6 combinations x all columns and diagnostics | `results/table4/rev_pstar_full.txt` |
 | Table 5 | 3-star rows + Count Sketch columns (T=24, full protocol) | `results/table5/` |
 | Figures 1/2 | 15 + 36 recomputed data points all match the archives (3 significant digits) | `results/figures/`, `results/table3/` |
-| notebook | all 12 code cells executed successfully; outputs ship with the package | `notebooks/paper_tables.ipynb` |
 | exp2/3b/6/11/12/13/14/15/16/17/18 | full protocol | `results/experiments/` |
 | exp5 (C++ JoinSketch) | bit-exact at matched budget | `results/experiments/exp5_join2_matched.expected.txt` |
-| exp9 | the 6 synthetic combinations are covered by the Table 4 full-protocol run; the standalone full run was stopped at the 5th combination to free the machine for the notebook (the first 4 were confirmed bit-exact) — re-run `experiments/run_all.py exp9` to check the ML/Kasandr constructs | `results/experiments/exp9_*` |
-
+| exp9 | the 6 synthetic combinations are covered by the Table 4 full-protocol run; the standalone full run was stopped at the 5th combination to free the machine for 
 **Disclosed gaps and differences**
 
 1. **Table 5, CCS p=3/4/5 columns.** The original run behind those columns
@@ -208,45 +200,7 @@ from the bundled gzip columns.
    original producer `rev_pstar.py`.  This is the value of "get it running,
    then reconcile against the archive" as a standing rule.
 
-## Why these numbers can be trusted
 
-1. **Double provenance.** Every table script is a faithful port of the
-   original producer (RNG draw order, seed base and protocol parameters
-   preserved one by one), and its output is reconciled three ways: against
-   the published value, against the archived production log, and against the
-   other tables that share a protocol.
-2. **Archives ship with the package.** The logs under `results/` are the
-   evidence behind the paper's numbers and can be re-checked independently;
-   `tables/table2_archive_audit.py` exists precisely to cross-check paper
-   values against the C++ archives.
-3. **Measured, not inferred.** Every "bit-exact" claim in this README was
-   measured on 2026-10-23 in the environment above.
-
-## Repository notes
-
-- **License**: MIT (see `LICENSE`).  Replace the copyright line with the
-  authors' names before making the repository public.
-- **Repository size**: the package is ~410 MB, almost all of it `data/`.  The
-  largest single file is 51 MB, so a plain `git push` is fine (GitHub's hard
-  limit is 100 MB per file).  If you would rather keep the repository light,
-  track `data/` with Git LFS — every script reads it through `loaders.py`, so
-  nothing else changes.
-- **Generated vs archived**: `results/*.out` are this port's own outputs and
-  are gitignored; the archived production logs under `results/` are part of
-  the artifact and are committed.
-
-## Cite
-
-```bibtex
-@article{ccs2026,
-  title   = {Complex Count Sketch: Mergeable Frequency-Moment
-             and p-Star Join Size Estimation},
-  author  = {<authors>},
-  journal = {PVLDB},
-  year    = {2026},
-  note    = {Artifact: this repository}
-}
-```
 
 ## Subdirectory notes
 
@@ -258,5 +212,3 @@ from the bundled gzip columns.
   conventions.
 - `examples/README.md`: the standalone CCS API and the measured output of
   each demo.
-- `notebooks/README.md`: the reconciliation notebook (Chinese) — how to use
-  it, its structure, and its list of known differences.
