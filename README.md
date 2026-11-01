@@ -2,7 +2,7 @@
 
 论文 *Complex Count Sketch: Mergeable Frequency-Moment and p-Star Join Size
 Estimation*(PVLDB)的可复现实验包:自带全部所需数据,一个共享核心库,
-20 个实验脚本与归档结果。
+19 个实验脚本与归档结果。
 
 ## 目录
 
@@ -15,7 +15,7 @@ Complex_Count_Sketch/
 │   ├── airlines/*.gz                     # Airlines 10 列
 │   ├── lp/*.gz                           # 合成列(uniform/zipf1.1/zipf1.5 ×3)
 │   └── kasandr_essential.npz             # Kasandr users/cats/times 预提取
-├── experiments/      # 20 个实验脚本(与论文位置一一对应,见下表)
+├── experiments/      # 19 个实验脚本 + 总控 run_all(与论文位置一一对应,见下表)
 └── results/          # 归档输出;legacy/ 为初版实验套件的原始输出
 ```
 
@@ -39,10 +39,10 @@ python3 run_all.py                    # 全部(数小时)
 
 | 脚本 | 论文位置 | 内容 |
 |---|---|---|
-| exp01_fp_skew | §5.2 表 2 CCS 列 | 合成数据 F_p + 宽度扫描 + CI |
-| exp02_tmccs_table | §5.4 表 4 | median / T-MCCS / Fixed20 |
+| exp01_fp_skew | §5.2 表 1 CCS 列 | 合成数据 F_p + 宽度扫描 + CI |
+| exp02_tmccs_table | §5.4 表 3 | median / T-MCCS / Fixed20 |
 | exp03_aggregators | §5.4 | median vs mean vs MoM vs T-MCCS |
-| exp04_pstar_baselines | §5.5 表 5 | p-star:CCS / per-edge / shared-sign |
+| exp04_pstar_baselines | §5.5 表 4 | p-star:CCS / per-edge / shared-sign |
 | exp05_misalignment | §5.5 | 固定边际、重频位移 L 网格 + 精确 Ψ |
 | exp06_pattern_check | §4.4 式(13) | 共址模式精确枚举验证 |
 | exp07_real_solutions | §4.2 | 实数乘子:精确解 + 精确期望 + 方差比 |
@@ -55,9 +55,9 @@ python3 run_all.py                    # 全部(数小时)
 | exp15_five_star | §5.7 | 五表 star(order-5) |
 | exp16_bridge_demo | §5.7 | 桥接连接(卷积 + 素数步长投影) |
 | exp19_tmccs_on_peredge | §5.5 信号边界 | 能量代理与行误差负相关(−0.22):虚部信号不可移植到实数方案 |
-| exp20_fp_sizing | §5.3 表 3 | F_p sizing:闭式系数、prior/fixed/ideal/pilot、150 部署/行 |
-| exp21_star_sizing | §5.6 表 6 | 3-star sizing:A、B 线性时间展开 + floor 不可行证书 |
-| exp22_single_state_real3 | §5.8 表 7 | 单状态 real-3 与 CCS 的七任务联合达标比较(E_max 协议) |
+| exp20_fp_sizing | §5.3 表 2 | F_p sizing:闭式系数、prior/fixed/ideal/pilot、150 部署/行 |
+| exp21_star_sizing | §5.6 表 5 | 3-star sizing:A、B 线性时间展开 + floor 不可行证书 |
+| exp22_single_state_real3 | §5.8 表 6 | 单状态 real-3 与 CCS 的七任务联合达标比较(E_max 协议) |
 
 脚本编号存在空缺(exp11、exp17、exp18),对应初版套件中已从论文删除或
 并入其他实验的条目;`results/legacy/` 保留了初版套件的原始输出,
