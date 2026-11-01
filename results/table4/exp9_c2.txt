@@ -1,3 +1,0 @@
-[synth uniforxzipf1.xzipf1.] truth=4.76041e+15  CCS mean=0.4103  peredge mean=0.4402 med=0.3605 neg=1/100 bias=0.378  sharedsign mean=1.077 med=0.9869 neg=48/100  cubes mean=1.93e+04 med=2.125e+04 neg=56/100
-EXP9_DONE
-C2 0

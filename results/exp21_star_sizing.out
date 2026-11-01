@@ -1,0 +1,31 @@
+=== 3-star sizing (Table 6): eps=0.1, delta=0.01, d*=37, 40 deployments per row, pilot 84 KB charged ===
+instance             configuration            w   d        KB   fail        med
+  [check] expansion vs direct summation (D=150): A ok, B ok
+  [floor two-point] floor/budget =     0.411 -> feasible
+  [floor golden] floor/budget =     0.162 -> feasible
+flat uniform x3      pairwise rule         3627   6     340.0  0.000   1.78e-02
+flat uniform x3      fixed default          256  64     256.0  0.400   7.53e-02
+flat uniform x3      ideal sizing          5731  37    3313.2  0.000   7.71e-03
+flat uniform x3      pilot sizing         18775  37   10938.3  0.000   3.90e-03
+  [check] expansion vs direct summation (D=150): A ok, B ok
+  [floor two-point] floor/budget =  3.65e+03 -> INFEASIBLE
+  [floor golden] floor/budget =  1.44e+03 -> INFEASIBLE
+zipf1.5 x3 aligned   pairwise rule          539   6      50.5  0.000   1.62e-04
+zipf1.5 x3 aligned   fixed default          256  64     256.0  0.000   3.13e-04
+zipf1.5 x3 aligned   ideal sizing           539  37     311.6  0.000   7.37e-05
+zipf1.5 x3 aligned   pilot sizing          6020  37    3564.3  0.000   2.12e-06
+  [check] expansion vs direct summation (D=150): A ok, B ok
+  [floor two-point] floor/budget =  2.54e+03 -> INFEASIBLE
+  [floor golden] floor/budget =     1e+03 -> INFEASIBLE
+mixed u/z1.1/z1.5    pairwise rule      1143041   6  107160.1  0.000   1.58e-06
+mixed u/z1.1/z1.5    fixed default          256  64     256.0  0.850   2.82e-01
+mixed u/z1.1/z1.5    ideal sizing       1143042  37  660821.2  0.000   5.65e-07
+mixed u/z1.1/z1.5    pilot sizing        186693  37  108015.9  0.000   5.27e-05
+  [check] expansion vs direct summation (D=150): A ok, B ok
+  [floor two-point] floor/budget =      47.6 -> INFEASIBLE
+  [floor golden] floor/budget =      18.8 -> INFEASIBLE
+misaligned D=300     pairwise rule        11371   6    1066.0  0.000   8.40e-03
+misaligned D=300     fixed default          256  64     256.0  0.100   3.05e-02
+misaligned D=300     ideal sizing         11460  37    6625.3  0.000   0.00e+00
+misaligned D=300     pilot sizing         18976  37   11054.5  0.000   0.00e+00
+EXP21_DONE

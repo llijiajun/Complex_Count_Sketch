@@ -1,4 +1,0 @@
-CS p=2 w=2048 ML userId: mean=4.539e-02 med=3.923e-02
-CS p=2 w=2048 ML movieId: mean=5.403e-03 med=4.080e-03
-CS p=2 w=2048 AL Origin-Dest: mean=6.322e-04 med=4.565e-04
-CS p=2 w=2048 AL Arr-Dep: mean=4.023e-03 med=2.925e-03

@@ -1,0 +1,11 @@
+=== F_p sizing (Table 3): eps=0.1, delta=0.01, d*=37, 150 deployments per row ===
+column    configuration                        w   d      KB             ratio   fail    p95 err
+zipf1.1   prior rule D^{1-2/p}/eps^2        2155   6     202    0.06[0.03,4.25]  0.000   2.11e-03
+zipf1.1   fixed default                      256  64     256    1.10[0.70,1.39]  0.000   4.67e-03
+zipf1.1   ideal sizing (true moments)       1206  37     697    0.80[0.31,2.11]  0.000   1.10e-03
+zipf1.1   pilot sizing (+pilot bytes)       1227  37     837    0.69[0.12,0.96]  0.000   1.21e-03
+uniform   prior rule D^{1-2/p}/eps^2        2155   6     202    0.88[0.82,1.14]  0.033   9.03e-02
+uniform   fixed default                      256  64     256    1.00[0.91,1.08]  0.313   2.01e-01
+uniform   ideal sizing (true moments)       5687  37    3288    1.02[0.92,1.05]  0.000   2.11e-02
+uniform   pilot sizing (+pilot bytes)      10389  37    6134    0.53[0.51,0.54]  0.000   1.40e-02
+EXP20_DONE

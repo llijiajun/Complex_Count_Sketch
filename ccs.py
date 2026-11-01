@@ -1,65 +1,282 @@
-"""ccs.py -- core library for the Complex Count Sketch (CCS) paper artifact.
+"""ccs.py -- Core library for the Complex Count Sketch (CCS) experiments.
 
-"Complex Count Sketch: Mergeable Frequency-Moment and p-Star Join Size
-Estimation" (PVLDB submission).  Everything the table/experiment scripts need,
-in one place.
+Everything the experiment scripts need to build and query the sketches of the
+paper "Complex Count Sketch: Mergeable Frequency-Moment and p-Star Join Size
+Estimation", in one place:
 
-Contents
---------
-A. Hash functions
-   * murmur2_32           -- exact Python port of the C++ pipeline's
-                             MurmurHash32 (MurmurHash2, 32-bit; the paper's
-                             Section 5.1 declares 32-bit MurmurHash).
-B. C++-pipeline-compatible estimators (paper Table 2)
-   * cpp_ccs_estimate     -- ComplexCountSketch(p, eps, gam, seed) as in
-                             cpp/common/countsketch.hpp (width 2^p/eps^2,
-                             depth ceil(ln(4/gam)), MurmurHash bucket+root).
-   * cpp_ams_estimate     -- AMS(eps, N, gam, seed) positional sample-count
-                             estimator, same header.
-   Both reproduce the paper's Table 2 bit-for-bit on the bundled data
-   (CCS exactly; AMS up to the sampled positions, see README).
-C. Python-protocol estimators (faithful to the archived producers)
-   * zipf_freq            -- make_freq of 03_tmccs_estimators.py
-   * ccs_rows_batch       -- ccs_row_stats of 03_tmccs_estimators.py
-                             (batch (d, D) RNG draws; Table 3)
-   * star_rows            -- rev_pstar.py / exp9 p-star row estimates
-                             (per-row interleaved draws; Tables 4, 5)
-   * stored_sketch, join_rows, cs2_rows
-                          -- exp1_real_joins.py 2-join estimators (Table 5)
-   * fp_rows_interleaved  -- exp8/exp15/exp04 per-row F_p estimator
-   * peredge_star, sharedsign_star, cubes_real
-                          -- exp9 real-valued star baselines (Table 4)
-D. Aggregators
-   * median / mean / med_of_means / tmccs / fixed20 / rand20
-E. Exact verification utilities (Section 5.2 "Validating the analysis")
-   * g_moments, exact_power_expectation, exact_solve_real_multiplier
-F. User-facing API (use CCS as a library -- see examples/)
-   * ComplexCountSketch  -- streaming sketch object: update / row_values /
-                            estimate / counters / merge (mergeable by virtue
-                            of additive counters)
-   * fp_estimate         -- one-call F_p estimate from (keys, counts)
-   * star_estimate       -- one-call p-star (k-way join) size estimate
-   * join2_estimate      -- one-call 2-way join size estimate
-   Section F delegates to sections A-E; it adds no estimator of its own, and
-   tests/test_api.py pins it to cpp_ccs_estimate bit-for-bit.
+  * star_rows          -- the p-star / F_p row estimates of a p-column CCS
+                          (shared h and g across columns, all-ones exponents)
+  * f_p_rows           -- single-column F_p row estimates (same sketch, p=order)
+  * join_rows          -- 2-join row estimates from two stored sketches
+                          (conjugation: exponents +1, -1; answers at any order)
+  * peredge_star       -- the real-valued per-edge Rademacher star estimator
+                          (order-2 instance of Prop. 4.7; unbiased)
+  * sharedsign_star    -- one +-1 hash shared by all columns (biased)
+  * cubes_real         -- cubes of one real Count Sketch over the merged stream
+  * tmccs              -- Tukey-truncated median over |Im(X_j)|
+  * g_moments, exact_power_expectation
+                       -- exact expectation of the power-sum estimator for a
+                          real multiplier (used to verify unbiasedness)
 
-RNG-draw-order discipline
--------------------------
-Several paper tables are reproduced BIT-EXACTLY, which requires replicating
-each producer's RNG draw order (batch vs per-row interleaved) and seed base.
-Every function below documents the producer it mirrors.  Do not "clean up"
-the draw order without re-checking the provenance tables in the README.
+Conventions
+-----------
+F          list of dense frequency vectors (float64), one per column, all over
+           the same key universe of size U.
+p          root order (sketch order).
+w, d       width (buckets per row) and depth (number of rows).
+rng        numpy Generator; each row uses independent draws from it.
 """
 import math
 import numpy as np
 
+
 # --------------------------------------------------------------------------- #
-# A. Hash functions
+# Complex Count Sketch
 # --------------------------------------------------------------------------- #
 
-_M = 0x5BD1E995
-_MASK = 0xFFFFFFFF
+def star_rows(F, p, w, rng, d=64):
+    """Row estimates of the p-star join (and of every column's F_p).
 
+    Builds one order-p CCS per column with SHARED h and g (the deployment
+    requirement: the same key carries the same root in every table), then
+    multiplies the counters element-wise across columns.
+
+    Returns (re, im): per-row Re(sum_s prod_i C_i[j,s]) and |Im(...)|.
+    """
+    U = len(F[0])
+    re = np.empty(d); im = np.empty(d)
+    for j in range(d):
+        h = rng.integers(0, w, size=U)
+        g = rng.integers(0, p, size=U)
+        ang = (2.0 * np.pi / p) * g
+        gr, gi = np.cos(ang), np.sin(ang)
+        pr, pi = np.ones(w), np.zeros(w)
+        for f in F:                                  # element-wise product
+            cr = np.bincount(h, weights=f * gr, minlength=w)
+            ci = np.bincount(h, weights=f * gi, minlength=w)
+            pr, pi = pr * cr - pi * ci, pr * ci + pi * cr
+        re[j] = pr.sum()
+        im[j] = abs(pi.sum())
+    return re, im
+
+
+def f_p_rows(freq, p, w, rng, d=64):
+    """Single-column F_p row estimates: X_j = sum_s C[j,s]^p (real part)."""
+    U = len(freq)
+    re = np.empty(d); im = np.empty(d)
+    for j in range(d):
+        h = rng.integers(0, w, size=U)
+        g = rng.integers(0, p, size=U)
+        ang = (2.0 * np.pi / p) * g
+        gr, gi = np.cos(ang), np.sin(ang)
+        cr = np.bincount(h, weights=freq * gr, minlength=w)
+        ci = np.bincount(h, weights=freq * gi, minlength=w)
+        X = (cr + 1j * ci) ** p
+        re[j] = X.real.sum()
+        im[j] = abs(X.imag.sum())
+    return re, im
+
+
+def join_rows(CR, CI, CS, SI, p):
+    """2-join row estimates from two STORED order-p sketches (conjugation).
+
+    sum_s C^R_s * conj(C^S_s): exponents +1 and -1 sum to 0 mod p, so the same
+    sketches answer the 2-join at every order.  CR/CI are the real/imaginary
+    parts of the first sketch's counters (d x w); CS/SI of the second.
+    """
+    d = CR.shape[0]
+    return ((CR * CS + CI * SI).sum(axis=1))
+
+
+def stored_sketch(freq, p, w, rng, d=64):
+    """One stored order-p CCS: returns (CR, CI), the d x w real/imag parts."""
+    U = len(freq)
+    CR = np.empty((d, w)); CI = np.empty((d, w))
+    for j in range(d):
+        h = rng.integers(0, w, size=U)
+        g = rng.integers(0, p, size=U)
+        ang = (2.0 * np.pi / p) * g
+        CR[j] = np.bincount(h, weights=freq * np.cos(ang), minlength=w)
+        CI[j] = np.bincount(h, weights=freq * np.sin(ang), minlength=w)
+    return CR, CI
+
+
+# --------------------------------------------------------------------------- #
+# Real-valued star baselines (Section 5 baselines)
+# --------------------------------------------------------------------------- #
+
+def peredge_star(F, w, rng, d=64):
+    """Per-edge Rademacher 3+-star at byte-matched width 2w (unbiased).
+
+    One independent +-1 sign per edge of the star; column t carries the
+    product of its incident edge signs, so the diagonal contributes
+    prod_e s_e^2 = 1 (order-2 instance of Prop. 4.7).
+    """
+    U = len(F[0]); W2 = 2 * w; k = len(F)
+    est = np.empty(d)
+    for j in range(d):
+        h = rng.integers(0, W2, size=U)
+        signs = []
+        for i in range(1, k):                        # edges (1, i+1)
+            signs.append(rng.integers(0, 2, size=U) * 2 - 1)
+        col_signs = [np.prod(signs, axis=0)] + signs  # col1 = product of edges
+        cs = [np.bincount(h, weights=f * sg, minlength=W2)
+              for f, sg in zip(F, col_signs)]
+        est[j] = float(np.prod(cs, axis=0).sum())
+    return est
+
+
+def sharedsign_star(F, w, rng, d=64):
+    """One +-1 hash shared by all columns: E[g^p] = E[g] = 0 for odd p (biased)."""
+    U = len(F[0])
+    est = np.empty(d)
+    for j in range(d):
+        h = rng.integers(0, w, size=U)
+        s = rng.integers(0, 2, size=U) * 2 - 1
+        cs = [np.bincount(h, weights=f * s, minlength=w) for f in F]
+        est[j] = float(np.prod(cs, axis=0).sum())
+    return est
+
+
+def cubes_real(F, w, rng, d=64, p=3):
+    """Sum of p-th powers of one real Count Sketch over the merged stream."""
+    U = len(F[0])
+    Fsum = np.sum(F, axis=0) if isinstance(F, list) else F.sum(axis=0)
+    est = np.empty(d)
+    for j in range(d):
+        h = rng.integers(0, w, size=U)
+        s = rng.integers(0, 2, size=U) * 2 - 1
+        c = np.bincount(h, weights=Fsum * s, minlength=w)
+        est[j] = float((c ** p).sum())
+    return est
+
+
+# --------------------------------------------------------------------------- #
+# Aggregation
+# --------------------------------------------------------------------------- #
+
+def tmccs(re, im, keep_frac=0.5):
+    """Tukey-truncated median: drop rows with |Im| > Q3 + 1.5 IQR (>=half kept)."""
+    im = np.asarray(im)
+    q1, q3 = np.percentile(im, [25, 75])
+    keep = np.nonzero(im <= q3 + 1.5 * (q3 - q1))[0]
+    if len(keep) < int(np.ceil(keep_frac * len(re))):
+        keep = np.argsort(im)[: len(re) // 2]
+    return float(np.median(re[keep]))
+
+
+def median(re):
+    return float(np.median(re))
+
+
+def mean(re):
+    return float(np.mean(re))
+
+
+def med_of_means(re, groups=8):
+    return float(np.median([g.mean() for g in np.array_split(re, groups)]))
+
+
+# --------------------------------------------------------------------------- #
+# Exact verification utilities (real multipliers)
+# --------------------------------------------------------------------------- #
+
+def g_moments(support, weights, upto):
+    """mu_m for m = 0..upto of a real multiplier (mu_0 = 1 by convention)."""
+    mu = np.ones(upto + 1)
+    for m in range(1, upto + 1):
+        mu[m] = float((weights * support ** m).sum())
+    mu[0] = 1.0
+    return mu
+
+
+def exact_power_expectation(p, freq, mu):
+    """E[(sum_alpha f_alpha S_alpha)^p], S_alpha iid with moments mu[0..p].
+
+    Dynamic program over the keys; exact to machine precision (no sampling).
+    The power-sum estimator is unbiased iff this equals sum_alpha f_alpha^p.
+    """
+    D = len(freq)
+    dp = np.zeros(p + 1); dp[0] = 1.0
+    for a in range(D):
+        f = freq[a]
+        if f == 0:
+            continue
+        new = np.zeros(p + 1)
+        for e in range(p + 1):
+            term, acc = 1.0, 0.0
+            for n in range(0, e + 1):
+                if n > 0:
+                    term *= f
+                acc += dp[e - n] * term * mu[n]
+            new[e] = acc
+        dp = new
+    return float(dp[p])
+
+
+def exact_solve_real_multiplier(p, support):
+    """Exact linear solve of the moment conditions on a fixed support.
+
+    Equations: sum w = 1; odd moments m = 1,3,..,p-2 equal 0; mu_p = 1.
+    Raises if the support admits no strictly positive solution.
+    """
+    eqs = [np.ones(len(support))] + [support ** m for m in range(1, p, 2)] \
+        + [support ** p]
+    A = np.vstack(eqs)
+    b = np.zeros(len(eqs)); b[0] = 1.0; b[-1] = 1.0
+    w = np.linalg.solve(A, b)
+    assert np.all(w > 1e-9), f"support {support} not strictly feasible"
+    return w
+
+
+def stored_family(F, p, w, rng, d=64):
+    """A SHARED-hash deployment: one order-p CCS per column, all columns using
+    the same h and g draws (the deployment requirement for multi-task reuse).
+
+    F: list of dense frequency vectors.  Returns a list of (CR, CI) pairs,
+    one d x w real/imaginary counter array per column.
+    """
+    U = len(F[0])
+    out = []
+    for j in range(d):
+        h = rng.integers(0, w, size=U)
+        g = rng.integers(0, p, size=U)
+        ang = (2.0 * np.pi / p) * g
+        gr, gi = np.cos(ang), np.sin(ang)
+        for i, f in enumerate(F):
+            if j == 0:
+                out.append((np.empty((d, w)), np.empty((d, w))))
+            out[i][0][j] = np.bincount(h, weights=f * gr, minlength=w)
+            out[i][1][j] = np.bincount(h, weights=f * gi, minlength=w)
+    return out
+
+
+def family_tasks(sketches, freqs, p):
+    """Answer F_p / 2-join / p-star from one shared-hash deployment.
+
+    sketches: list of (CR, CI) from stored_family.  freqs: dense vectors
+    (for truths at the call site).  Returns dict of per-row estimates:
+      'F_p[i]' per column, 'join(i,j)' pairwise, 'star' full product.
+    """
+    out = {}
+    powers = [(CR + 1j * CI) ** p for (CR, CI) in sketches]
+    for i, X in enumerate(powers):
+        out[f"F_p[{i}]"] = X.real.sum(axis=1)
+    for i in range(len(sketches)):
+        for j in range(i + 1, len(sketches)):
+            CR, CI = sketches[i]
+            DS, DI = sketches[j]
+            out[f"join({i},{j})"] = (CR * DS + CI * DI).sum(axis=1)
+    prod = np.ones_like(powers[0])
+    for (CR, CI) in sketches:                     # star: each counter ONCE
+        prod = prod * (CR + 1j * CI)
+    out["star"] = prod.real.sum(axis=1)
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# C++-pipeline-compatible estimators (paper Table 2, bit-for-bit)
+# --------------------------------------------------------------------------- #
 
 def murmur2_32(key, seed):
     """Exact port of MurmurHash32 in cpp/common/MurmurHash.h (MurmurHash2).
@@ -97,97 +314,6 @@ def murmur2_32(key, seed):
     h = (h * _M) & _MASK
     h ^= h >> 15
     return h
-
-
-def murmur2_32_bulk(keys, seed):
-    """Vectorized MurmurHash2 (bit-exact with murmur2_32) over many keys.
-
-    Groups the keys by byte length (each group then shares the 4-byte block
-    structure) and runs the whole group through uint64 numpy arithmetic masked
-    to 32 bits, which is exact because every intermediate product of two
-    32-bit values fits in 64 bits.  Used by the C++-compatible estimators on
-    columns with millions of distinct keys, where the scalar port is too slow.
-    """
-    seed = int(seed) & _MASK
-    kb = [k if isinstance(k, bytes) else str(k).encode() for k in keys]
-    n = len(kb)
-    out = np.empty(n, dtype=np.uint32)
-    groups = {}
-    for idx, k in enumerate(kb):
-        groups.setdefault(len(k), []).append(idx)
-    for ln, idxs in groups.items():
-        m = len(idxs)
-        raw = b"".join(kb[i] for i in idxs)
-        buf = np.frombuffer(raw, dtype=np.uint8).reshape(m, ln)
-        h = np.full(m, (seed ^ ln) & _MASK, dtype=np.uint64)
-        nfull = ln // 4
-        for t in range(nfull):
-            b = buf[:, 4 * t:4 * t + 4].astype(np.uint64)
-            k = (b[:, 0] | (b[:, 1] << 8) | (b[:, 2] << 16) | (b[:, 3] << 24))
-            k = (k * _M) & _MASK
-            k ^= k >> 24
-            k = (k * _M) & _MASK
-            h = (h * _M) & _MASK
-            h ^= k
-        rem = ln % 4
-        if rem:
-            b = buf[:, nfull * 4:].astype(np.uint64)
-            if rem == 3:
-                h ^= b[:, 2] << 16
-                h ^= b[:, 1] << 8
-            elif rem == 2:
-                h ^= b[:, 1] << 8
-            h ^= b[:, 0]
-            h = (h * _M) & _MASK
-        h ^= h >> 13
-        h = (h * _M) & _MASK
-        h ^= h >> 15
-        out[idxs] = h.astype(np.uint32)
-    return out
-
-
-# --------------------------------------------------------------------------- #
-# B. C++-pipeline-compatible estimators (paper Table 2)
-# --------------------------------------------------------------------------- #
-
-def cpp_dims(p, eps, gam=0.01):
-    """(width, depth) of the C++ ComplexCountSketch / CountSketch / AMS."""
-    width = int(math.ceil((2.0 ** p) / eps / eps))
-    depth = int(math.ceil(math.log(4.0 / gam)))
-    return width, depth
-
-
-def ccs_width_ams(eps, gam=0.01):
-    """(width, depth) of the C++ AMS sketch (width = ceil(1/eps^2))."""
-    width = int(math.ceil(1.0 / eps / eps))
-    depth = int(math.ceil(math.log(4.0 / gam)))
-    return width, depth
-
-
-def cpp_ccs_hashes(keys, seed, depth):
-    """Raw MurmurHash values for every row's bucket and root hash.
-
-    p-independent (the C++ seeds are hash_seed+i and
-    hash_seed+i*i+1+CS_num), so callers that sweep p can compute these once
-    and reuse them across orders -- bit-identical to recomputing per call.
-    """
-    kb = list(keys)
-    hb = np.empty((depth, len(kb)), dtype=np.int64)
-    hr = np.empty((depth, len(kb)), dtype=np.int64)
-    for i in range(depth):
-        hb[i] = murmur2_32_bulk(kb, seed + i).astype(np.int64)
-        hr[i] = murmur2_32_bulk(kb, seed + i * i + 1 + depth).astype(np.int64)
-    return hb, hr
-
-
-def _hash_keys(keys, seed, width, p, depth):
-    """Per-key (bucket, root) for every row, mirroring the C++ Insert.
-
-    C++: index = MurmurHash32(str, len, hash_seed + i) % width
-         g     = MurmurHash32(str, len, hash_seed + i*i + 1 + CS_num) % p
-    """
-    hb, hr = cpp_ccs_hashes(keys, seed, depth)
-    return hb % width, hr % p
 
 
 def cpp_ccs_estimate(keys, counts, p, eps, gam, hash_seed, hashes=None):
@@ -269,8 +395,94 @@ def cpp_ams_estimate(keys, counts, N, p, eps, gam, hash_seed, seed=0):
 
 
 # --------------------------------------------------------------------------- #
-# C. Python-protocol estimators (faithful to the archived producers)
+# Archived C++-pipeline helpers (Table 2 bit-for-bit reproduction; used by
+# tests/test_api.py and the legacy table drivers)
 # --------------------------------------------------------------------------- #
+_M = 0x5BD1E995
+
+_MASK = 0xFFFFFFFF
+
+def murmur2_32_bulk(keys, seed):
+    """Vectorized MurmurHash2 (bit-exact with murmur2_32) over many keys.
+
+    Groups the keys by byte length (each group then shares the 4-byte block
+    structure) and runs the whole group through uint64 numpy arithmetic masked
+    to 32 bits, which is exact because every intermediate product of two
+    32-bit values fits in 64 bits.  Used by the C++-compatible estimators on
+    columns with millions of distinct keys, where the scalar port is too slow.
+    """
+    seed = int(seed) & _MASK
+    kb = [k if isinstance(k, bytes) else str(k).encode() for k in keys]
+    n = len(kb)
+    out = np.empty(n, dtype=np.uint32)
+    groups = {}
+    for idx, k in enumerate(kb):
+        groups.setdefault(len(k), []).append(idx)
+    for ln, idxs in groups.items():
+        m = len(idxs)
+        raw = b"".join(kb[i] for i in idxs)
+        buf = np.frombuffer(raw, dtype=np.uint8).reshape(m, ln)
+        h = np.full(m, (seed ^ ln) & _MASK, dtype=np.uint64)
+        nfull = ln // 4
+        for t in range(nfull):
+            b = buf[:, 4 * t:4 * t + 4].astype(np.uint64)
+            k = (b[:, 0] | (b[:, 1] << 8) | (b[:, 2] << 16) | (b[:, 3] << 24))
+            k = (k * _M) & _MASK
+            k ^= k >> 24
+            k = (k * _M) & _MASK
+            h = (h * _M) & _MASK
+            h ^= k
+        rem = ln % 4
+        if rem:
+            b = buf[:, nfull * 4:].astype(np.uint64)
+            if rem == 3:
+                h ^= b[:, 2] << 16
+                h ^= b[:, 1] << 8
+            elif rem == 2:
+                h ^= b[:, 1] << 8
+            h ^= b[:, 0]
+            h = (h * _M) & _MASK
+        h ^= h >> 13
+        h = (h * _M) & _MASK
+        h ^= h >> 15
+        out[idxs] = h.astype(np.uint32)
+    return out
+
+def cpp_dims(p, eps, gam=0.01):
+    """(width, depth) of the C++ ComplexCountSketch / CountSketch / AMS."""
+    width = int(math.ceil((2.0 ** p) / eps / eps))
+    depth = int(math.ceil(math.log(4.0 / gam)))
+    return width, depth
+
+def ccs_width_ams(eps, gam=0.01):
+    """(width, depth) of the C++ AMS sketch (width = ceil(1/eps^2))."""
+    width = int(math.ceil(1.0 / eps / eps))
+    depth = int(math.ceil(math.log(4.0 / gam)))
+    return width, depth
+
+def cpp_ccs_hashes(keys, seed, depth):
+    """Raw MurmurHash values for every row's bucket and root hash.
+
+    p-independent (the C++ seeds are hash_seed+i and
+    hash_seed+i*i+1+CS_num), so callers that sweep p can compute these once
+    and reuse them across orders -- bit-identical to recomputing per call.
+    """
+    kb = list(keys)
+    hb = np.empty((depth, len(kb)), dtype=np.int64)
+    hr = np.empty((depth, len(kb)), dtype=np.int64)
+    for i in range(depth):
+        hb[i] = murmur2_32_bulk(kb, seed + i).astype(np.int64)
+        hr[i] = murmur2_32_bulk(kb, seed + i * i + 1 + depth).astype(np.int64)
+    return hb, hr
+
+def _hash_keys(keys, seed, width, p, depth):
+    """Per-key (bucket, root) for every row, mirroring the C++ Insert.
+
+    C++: index = MurmurHash32(str, len, hash_seed + i) % width
+         g     = MurmurHash32(str, len, hash_seed + i*i + 1 + CS_num) % p
+    """
+    hb, hr = cpp_ccs_hashes(keys, seed, depth)
+    return hb % width, hr % p
 
 def zipf_freq(D, N, alpha, seed):
     """make_freq of 03_tmccs_estimators.py (Table 3 / exp3 / exp3b protocol).
@@ -285,7 +497,6 @@ def zipf_freq(D, N, alpha, seed):
         w /= w.sum()
         items = rng.choice(D, size=N, p=w)
     return np.bincount(items, minlength=D).astype(np.float64)
-
 
 def ccs_rows_batch(freq, p, w, d, seed):
     """ccs_row_stats of 03_tmccs_estimators.py (Table 3 producer).
@@ -311,7 +522,6 @@ def ccs_rows_batch(freq, p, w, d, seed):
         im_row[j] = abs(s.imag)
     return re_ests, im_row
 
-
 def fp_rows_interleaved(freq, p, w, rng, d=64):
     """Per-row interleaved F_p estimator (exp8 / exp15 / exp04 protocol).
 
@@ -330,58 +540,6 @@ def fp_rows_interleaved(freq, p, w, rng, d=64):
         re[j] = X.real.sum()
         im[j] = abs(X.imag.sum())
     return re, im
-
-
-def star_rows(F, p, w, rng, d=64):
-    """p-star row estimates (rev_pstar.py / exp9 / exp12 protocol).
-
-    One order-p CCS per column with SHARED h and g (deployment requirement),
-    element-wise counter product across columns; per row j: h then g.
-    Returns (re, im) with im = |Im(sum_s prod_i C_i[j, s])|.
-    """
-    U = len(F[0])
-    re = np.empty(d)
-    im = np.empty(d)
-    for j in range(d):
-        h = rng.integers(0, w, size=U)
-        g = rng.integers(0, p, size=U)
-        ang = (2.0 * np.pi / p) * g
-        gr, gi = np.cos(ang), np.sin(ang)
-        pr, pi = np.ones(w), np.zeros(w)
-        for f in F:
-            cr = np.bincount(h, weights=f * gr, minlength=w)
-            ci = np.bincount(h, weights=f * gi, minlength=w)
-            pr, pi = pr * cr - pi * ci, pr * ci + pi * cr
-        re[j] = pr.sum()
-        im[j] = abs(pi.sum())
-    return re, im
-
-
-def stored_sketch(freq, p, w, rng, d=64):
-    """One stored order-p CCS: (CR, CI) real/imag counter arrays (d x w).
-
-    exp1_real_joins.py protocol: per row j, h then g over the key universe.
-    """
-    U = len(freq)
-    CR = np.empty((d, w))
-    CI = np.empty((d, w))
-    for j in range(d):
-        h = rng.integers(0, w, size=U)
-        g = rng.integers(0, p, size=U)
-        ang = (2.0 * np.pi / p) * g
-        CR[j] = np.bincount(h, weights=freq * np.cos(ang), minlength=w)
-        CI[j] = np.bincount(h, weights=freq * np.sin(ang), minlength=w)
-    return CR, CI
-
-
-def join_rows(CR, CI, CS, SI, p):
-    """2-join row estimates from two STORED order-p sketches (conjugation).
-
-    sum_s C^R_s * conj(C^S_s): exponents +1 and -1 sum to 0 mod p, so one
-    stored sketch answers the 2-join at every order (paper Section 5.5).
-    """
-    return (CR * CS + CI * SI).sum(axis=1)
-
 
 def cs2_rows(R, S, w, rng, d=64):
     """Count Sketch (order-2 specialist) 2-join estimator, exp1 protocol.
@@ -403,7 +561,6 @@ def cs2_rows(R, S, w, rng, d=64):
         rej[j] = float(np.sum(crR * crS))
     return rej
 
-
 def ccs_cross2_rows(R, S, p, w, rng, d=64):
     """Order-p CCS 2-join estimator, exp1 protocol (one root per key)."""
     allk = np.unique(np.concatenate([R[0], S[0]]))
@@ -422,101 +579,10 @@ def ccs_cross2_rows(R, S, p, w, rng, d=64):
         rej[j] = float(np.sum(crR * crS + ciR * ciS))
     return rej
 
-
-# --------------------------------------------------------------------------- #
-# Real-valued star baselines (Section 5; exp9 / exp12 protocols)
-# --------------------------------------------------------------------------- #
-
-def peredge_star(F, w, rng, d=64):
-    """Per-edge Rademacher star at byte-matched width 2w (unbiased).
-
-    One independent +-1 sign per star edge; column 1 carries the product of
-    its incident edge signs, so the diagonal contributes prod s_e^2 = 1.
-    Per row j: h (U), then the k-1 edge signs in order.
-    """
-    U = len(F[0])
-    W2 = 2 * w
-    k = len(F)
-    est = np.empty(d)
-    for j in range(d):
-        h = rng.integers(0, W2, size=U)
-        s = [rng.integers(0, 2, size=U) * 2 - 1 for _ in range(k - 1)]
-        signs = [np.prod(s, axis=0)] + [s[i] for i in range(k - 1)]
-        cs = [np.bincount(h, weights=f * sg, minlength=W2)
-              for f, sg in zip(F, signs)]
-        est[j] = float(np.prod(cs, axis=0).sum())
-    return est
-
-
-def sharedsign_star(F, w, rng, d=64):
-    """One +-1 hash shared by all columns (biased: E[g^p] = 0 for odd p)."""
-    U = len(F[0])
-    est = np.empty(d)
-    for j in range(d):
-        h = rng.integers(0, w, size=U)
-        s = rng.integers(0, 2, size=U) * 2 - 1
-        cs = [np.bincount(h, weights=f * s, minlength=w) for f in F]
-        est[j] = float(np.prod(cs, axis=0).sum())
-    return est
-
-
-def cubes_real(F, w, rng, d=64, p=3):
-    """Sum of p-th powers of one real Count Sketch over the merged stream.
-
-    `F` is either the list of per-column frequency vectors (summed here) or
-    the already element-wise-summed stream itself.
-    """
-    if isinstance(F, (list, tuple)):
-        Fsum = np.sum(F, axis=0)
-    else:
-        Fsum = np.asarray(F)
-        if Fsum.ndim == 2:
-            Fsum = Fsum.sum(axis=0)
-    U = len(Fsum)
-    est = np.empty(d)
-    for j in range(d):
-        h = rng.integers(0, w, size=U)
-        s = rng.integers(0, 2, size=U) * 2 - 1
-        c = np.bincount(h, weights=Fsum * s, minlength=w)
-        est[j] = float((c ** p).sum())
-    return est
-
-
-# --------------------------------------------------------------------------- #
-# D. Aggregators
-# --------------------------------------------------------------------------- #
-
-def median(re):
-    return float(np.median(re))
-
-
-def mean(re):
-    return float(np.mean(re))
-
-
-def med_of_means(re, groups=8):
-    return float(np.median([g.mean() for g in np.array_split(re, groups)]))
-
-
-def tmccs(re, im):
-    """Tukey-truncated median over |Im(X_j)|, keeping at least half the rows.
-
-    Identical rule to the paper's Algorithm alg:tmccs and to the archived
-    producers (03_tmccs_estimators.py / rev_pstar.py / exp9).
-    """
-    im = np.asarray(im)
-    q1, q3 = np.percentile(im, [25, 75])
-    keep = np.nonzero(im <= q3 + 1.5 * (q3 - q1))[0]
-    if len(keep) < len(re) // 2:
-        keep = np.argsort(im)[: len(re) // 2]
-    return float(np.median(re[keep]))
-
-
 def fixed20(re, im, d=None):
     """Fixed_20 control: always drop the 20% of rows with the largest |Im|."""
     d = d or len(re)
     return float(np.median(re[np.argsort(im)[: int(round(d * 0.8))]]))
-
 
 def rand20(re, d, seed):
     """Rand_20 control: drop 20% of rows uniformly at random.
@@ -528,71 +594,54 @@ def rand20(re, d, seed):
     keep = rng.permutation(d)[: int(round(d * 0.8))]
     return float(np.median(re[keep]))
 
+def fp_estimate(keys, counts=None, p=3, eps=0.1, gam=0.01, seed=0,
+                agg="median"):
+    """One-call F_p estimate of a stream given as (keys, counts).
 
-# --------------------------------------------------------------------------- #
-# E. Exact verification utilities (Section 5.2)
-# --------------------------------------------------------------------------- #
-
-def g_moments(support, weights, upto):
-    """mu_m for m = 0..upto of a real multiplier (mu_0 = 1 by convention)."""
-    mu = np.ones(upto + 1)
-    for m in range(1, upto + 1):
-        mu[m] = float((weights * support ** m).sum())
-    mu[0] = 1.0
-    return mu
-
-
-def exact_power_expectation(p, freq, mu):
-    """E[(sum_alpha f_alpha S_alpha)^p], S_alpha iid with moments mu[0..p].
-
-    Dynamic program over the keys; exact to machine precision (no sampling).
-    The power-sum estimator is unbiased iff this equals sum_alpha f_alpha^p.
+    Thin wrapper: builds a ComplexCountSketch sized by (eps, gam) and returns
+    its estimate.  Equivalent to cpp_ccs_estimate(keys, counts, p, eps, gam,
+    seed) when agg='median'.
     """
-    D = len(freq)
-    dp = np.zeros(p + 1)
-    dp[0] = 1.0
-    for a in range(D):
-        f = freq[a]
-        if f == 0:
-            continue
-        new = np.zeros(p + 1)
-        for e in range(p + 1):
-            term, acc = 1.0, 0.0
-            for n in range(0, e + 1):
-                if n > 0:
-                    term *= f
-                acc += dp[e - n] * term * mu[n]
-            new[e] = acc
-        dp = new
-    return float(dp[p])
+    sk = ComplexCountSketch.from_eps(p, eps, gam, seed)
+    sk.update(keys, counts if counts is not None else np.ones(len(list(keys))))
+    return sk.estimate(agg)
 
+def star_estimate(F, p, width, seed, depth=64, agg="median"):
+    """Estimate a p-star (multi-way join size) from k frequency vectors.
 
-def exact_solve_real_multiplier(p, support):
-    """Exact linear solve of the moment conditions on a fixed support.
+    F is a list of k frequency vectors over the SAME key universe: the
+    answer is sum_a prod_i f^a_i (the size of the k-way natural join on a
+    shared key).  All k columns must be sketched with the SAME h and g --
+    that sharing is what makes the element-wise product of counters an
+    unbiased estimator (paper Section 5.4).
 
-    Equations: sum w = 1; odd moments m = 1,3,..,p-2 equal 0; mu_p = 1.
-    Raises if the support admits no strictly positive solution.
+    Returns the point estimate; `agg` is median or tmccs as above.
     """
-    eqs = [np.ones(len(support))] + [support ** m for m in range(1, p, 2)] \
-        + [support ** p]
-    A = np.vstack(eqs)
-    b = np.zeros(len(eqs))
-    b[0] = 1.0
-    b[-1] = 1.0
-    w = np.linalg.solve(A, b)
-    assert np.all(w > 1e-9), f"support {support} not strictly feasible"
-    return w
+    rng = np.random.default_rng(seed)
+    re, im = star_rows([np.asarray(f, dtype=np.float64) for f in F],
+                       p, width, rng, d=depth)
+    return tmccs(re, im) if agg == "tmccs" else median(re)
+
+def join2_estimate(R, S, p, width, seed, depth=64, agg="median"):
+    """Estimate a 2-way join size |R join S| with an order-p CCS.
+
+    R and S are (keys, counts) pairs over a shared key universe.  The two
+    columns are sketched with matched hashes, and the estimate is
+    Re( sum_s C^R_s * conj(C^S_s) ): the exponents +1 and -1 cancel, so one
+    stored sketch answers the join at every order (paper Section 5.5).
+
+    Returns the point estimate; `agg` is median or tmccs.
+    """
+    rng = np.random.default_rng(seed)
+    est = ccs_cross2_rows(R, S, p, width, rng, d=depth)
+    if agg == "tmccs":
+        raise ValueError("tmccs needs |Im|; use ccs_cross2_rows directly")
+    return median(est)
 
 
 # --------------------------------------------------------------------------- #
-# F. User-facing API: use CCS as a library
+# Archived C++-pipeline sketch class (Table 2 bit-for-bit)
 # --------------------------------------------------------------------------- #
-# The functions above mirror the paper's original producers one-for-one (that
-# is what makes the tables reproducible bit-for-bit).  This last section is the
-# ergonomic wrapper for readers who simply want to *use* CCS: one sketch object
-# you can update, merge and query, plus one-call helpers for the two headline
-# use cases (F_p moments and p-star join sizes).  Everything here delegates to
-# the functions above, so no estimator logic is duplicated.
 
 class ComplexCountSketch:
     """An order-p Complex Count Sketch.
@@ -754,50 +803,3 @@ class ComplexCountSketch:
     def __repr__(self):
         return (f"ComplexCountSketch(p={self.p}, width={self.width}, "
                 f"depth={self.depth}, seed={self.seed})")
-
-
-def fp_estimate(keys, counts=None, p=3, eps=0.1, gam=0.01, seed=0,
-                agg="median"):
-    """One-call F_p estimate of a stream given as (keys, counts).
-
-    Thin wrapper: builds a ComplexCountSketch sized by (eps, gam) and returns
-    its estimate.  Equivalent to cpp_ccs_estimate(keys, counts, p, eps, gam,
-    seed) when agg='median'.
-    """
-    sk = ComplexCountSketch.from_eps(p, eps, gam, seed)
-    sk.update(keys, counts if counts is not None else np.ones(len(list(keys))))
-    return sk.estimate(agg)
-
-
-def star_estimate(F, p, width, seed, depth=64, agg="median"):
-    """Estimate a p-star (multi-way join size) from k frequency vectors.
-
-    F is a list of k frequency vectors over the SAME key universe: the
-    answer is sum_a prod_i f^a_i (the size of the k-way natural join on a
-    shared key).  All k columns must be sketched with the SAME h and g --
-    that sharing is what makes the element-wise product of counters an
-    unbiased estimator (paper Section 5.4).
-
-    Returns the point estimate; `agg` is median or tmccs as above.
-    """
-    rng = np.random.default_rng(seed)
-    re, im = star_rows([np.asarray(f, dtype=np.float64) for f in F],
-                       p, width, rng, d=depth)
-    return tmccs(re, im) if agg == "tmccs" else median(re)
-
-
-def join2_estimate(R, S, p, width, seed, depth=64, agg="median"):
-    """Estimate a 2-way join size |R join S| with an order-p CCS.
-
-    R and S are (keys, counts) pairs over a shared key universe.  The two
-    columns are sketched with matched hashes, and the estimate is
-    Re( sum_s C^R_s * conj(C^S_s) ): the exponents +1 and -1 cancel, so one
-    stored sketch answers the join at every order (paper Section 5.5).
-
-    Returns the point estimate; `agg` is median or tmccs.
-    """
-    rng = np.random.default_rng(seed)
-    est = ccs_cross2_rows(R, S, p, width, rng, d=depth)
-    if agg == "tmccs":
-        raise ValueError("tmccs needs |Im|; use ccs_cross2_rows directly")
-    return median(est)

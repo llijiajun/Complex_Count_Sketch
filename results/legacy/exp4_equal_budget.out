@@ -1,0 +1,12 @@
+CCS w=100 d=6 uniform p=3: mean=3.316e-01 med=2.192e-01
+CCS w=100 d=6 uniform p=4: mean=1.273e+01 med=1.158e+01
+CCS w=100 d=6 uniform p=5: mean=2.060e+02 med=1.790e+02
+CCS w=100 d=6 zipf1.1 p=3: mean=1.572e-02 med=1.684e-02
+CCS w=100 d=6 zipf1.1 p=4: mean=1.113e-02 med=8.089e-03
+CCS w=100 d=6 zipf1.1 p=5: mean=1.698e-02 med=1.477e-02
+CCS w=100 d=6 zipf1.5 p=3: mean=2.682e-03 med=2.090e-03
+CCS w=100 d=6 zipf1.5 p=4: mean=1.375e-03 med=1.091e-03
+CCS w=100 d=6 zipf1.5 p=5: mean=3.055e-03 med=1.777e-03
+CCS w=100 d=6 mix p=3: mean=1.375e-02 med=1.572e-02
+CCS w=100 d=6 mix p=4: mean=1.225e-02 med=1.041e-02
+CCS w=100 d=6 mix p=5: mean=1.579e-02 med=1.629e-02

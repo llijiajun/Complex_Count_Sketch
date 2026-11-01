@@ -1,0 +1,99 @@
+=== one deployment, seven tasks, joint target eps=0.1: 40 deployments per system ===
+real-3 diagonal floor / (eps^2 J^2) on this workload = 772.69
+--- CCS median 0.79MB (3x256x64x16B)
+  JOINT (Emax<=eps): 40/40 deployments  median Emax=0.003  max Emax=0.005
+  F3[0]      med-err=2.810e-03  fail= 0.00
+  F3[1]      med-err=2.694e-03  fail= 0.00
+  F3[2]      med-err=2.623e-03  fail= 0.00
+  J2(0,1)    med-err=2.158e-03  fail= 0.00
+  J2(0,2)    med-err=2.120e-03  fail= 0.00
+  J2(1,2)    med-err=2.156e-03  fail= 0.00
+  3-star     med-err=2.787e-03  fail= 0.00
+--- real-3 median 0.79MB (3x512x64x8B)
+  JOINT (Emax<=eps): 0/40 deployments  median Emax=0.999  max Emax=1.006
+  F3[0]      med-err=9.987e-01  fail= 1.00
+  F3[1]      med-err=9.988e-01  fail= 1.00
+  F3[2]      med-err=9.989e-01  fail= 1.00
+  J2(0,1)    med-err=7.858e-01  fail= 1.00
+  J2(0,2)    med-err=7.859e-01  fail= 1.00
+  J2(1,2)    med-err=7.863e-01  fail= 1.00
+  3-star     med-err=9.988e-01  fail= 1.00
+--- real-3 median 0.79MB (3x128x256x8B)
+  JOINT (Emax<=eps): 0/40 deployments  median Emax=0.999  max Emax=1.004
+  F3[0]      med-err=9.983e-01  fail= 1.00
+  F3[1]      med-err=9.984e-01  fail= 1.00
+  F3[2]      med-err=9.985e-01  fail= 1.00
+  J2(0,1)    med-err=7.889e-01  fail= 1.00
+  J2(0,2)    med-err=7.890e-01  fail= 1.00
+  J2(1,2)    med-err=7.892e-01  fail= 1.00
+  3-star     med-err=9.984e-01  fail= 1.00
+--- real-3 MEAN 0.79MB (3x128x256x8B)
+  JOINT (Emax<=eps): 17/40 deployments  median Emax=0.113  max Emax=0.396
+  F3[0]      med-err=1.130e-01  fail= 0.57
+  F3[1]      med-err=1.128e-01  fail= 0.57
+  F3[2]      med-err=1.133e-01  fail= 0.57
+  J2(0,1)    med-err=6.723e-02  fail= 0.38
+  J2(0,2)    med-err=6.737e-02  fail= 0.38
+  J2(1,2)    med-err=6.733e-02  fail= 0.38
+  3-star     med-err=1.130e-01  fail= 0.57
+--- real-3 MEAN 3.1MB (3x512x256x8B)
+  JOINT (Emax<=eps): 16/40 deployments  median Emax=0.119  max Emax=0.395
+  F3[0]      med-err=1.186e-01  fail= 0.60
+  F3[1]      med-err=1.184e-01  fail= 0.60
+  F3[2]      med-err=1.188e-01  fail= 0.60
+  J2(0,1)    med-err=6.828e-02  fail= 0.35
+  J2(0,2)    med-err=6.857e-02  fail= 0.35
+  J2(1,2)    med-err=6.844e-02  fail= 0.35
+  3-star     med-err=1.186e-01  fail= 0.60
+--- real-3 MEAN 1.6MB (3x128x512x8B)
+  JOINT (Emax<=eps): 28/40 deployments  median Emax=0.063  max Emax=0.285
+  F3[0]      med-err=6.263e-02  fail= 0.30
+  F3[1]      med-err=6.262e-02  fail= 0.30
+  F3[2]      med-err=6.266e-02  fail= 0.30
+  J2(0,1)    med-err=3.832e-02  fail= 0.17
+  J2(0,2)    med-err=3.828e-02  fail= 0.17
+  J2(1,2)    med-err=3.833e-02  fail= 0.17
+  3-star     med-err=6.264e-02  fail= 0.30
+--- real-3 MEAN 3.1MB (3x128x1024x8B)
+  JOINT (Emax<=eps): 29/40 deployments  median Emax=0.057  max Emax=0.239
+  F3[0]      med-err=5.654e-02  fail= 0.28
+  F3[1]      med-err=5.659e-02  fail= 0.25
+  F3[2]      med-err=5.645e-02  fail= 0.28
+  J2(0,1)    med-err=3.925e-02  fail= 0.07
+  J2(0,2)    med-err=3.924e-02  fail= 0.07
+  J2(1,2)    med-err=3.927e-02  fail= 0.07
+  3-star     med-err=5.653e-02  fail= 0.28
+--- real-3 median 1.18MB (3x768x64x8B)
+  JOINT (Emax<=eps): 0/40 deployments  median Emax=0.998  max Emax=1.006
+  F3[0]      med-err=9.981e-01  fail= 1.00
+  F3[1]      med-err=9.982e-01  fail= 1.00
+  F3[2]      med-err=9.983e-01  fail= 1.00
+  J2(0,1)    med-err=7.853e-01  fail= 1.00
+  J2(0,2)    med-err=7.855e-01  fail= 1.00
+  J2(1,2)    med-err=7.860e-01  fail= 1.00
+  3-star     med-err=9.982e-01  fail= 1.00
+--- pair-only real joins 0.79MB (3x256x64x8B)
+  JOINT (Emax<=eps): 40/40 deployments  median Emax=0.003  max Emax=0.008
+/Users/lijiajun/miniconda3/envs/py311/lib/python3.11/site-packages/numpy/core/fromnumeric.py:3504: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Users/lijiajun/miniconda3/envs/py311/lib/python3.11/site-packages/numpy/core/_methods.py:129: RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+/Users/lijiajun/Desktop/claude_task/CCS/ccs-release/experiments/exp22_single_state_real3.py:156: RuntimeWarning: Mean of empty slice.
+  f"fail={float((e > EPS).mean()):5.2f}", flush=True)
+  F3[0]      med-err=      nan  fail=  nan
+  F3[1]      med-err=      nan  fail=  nan
+  F3[2]      med-err=      nan  fail=  nan
+  J2(0,1)    med-err=1.630e-03  fail= 0.00
+  J2(0,2)    med-err=1.658e-03  fail= 0.00
+  J2(1,2)    med-err=1.884e-03  fail= 0.00
+  3-star     med-err=      nan  fail=  nan
+--- composite: pair joins 0.79MB + real-3 tier 0.39MB = 1.18MB
+  JOINT (Emax<=eps): 0/40 deployments  median Emax=0.998  max Emax=1.006
+  F3[0]      med-err=9.972e-01  fail= 1.00
+  F3[1]      med-err=9.974e-01  fail= 1.00
+  F3[2]      med-err=9.975e-01  fail= 1.00
+  J2(0,1)    med-err=2.486e-03  fail= 0.00
+  J2(0,2)    med-err=1.156e-03  fail= 0.00
+  J2(1,2)    med-err=1.372e-03  fail= 0.00
+  3-star     med-err=9.974e-01  fail= 1.00
+EXP22_DONE

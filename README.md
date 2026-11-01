@@ -1,214 +1,86 @@
-# CCS artifact — Complex Count Sketch
+# Complex_Count_Sketch:代码与数据发布
 
-Reproduction artifact for **"Complex Count Sketch: Mergeable
-Frequency-Moment and p-Star Join Size Estimation"** (PVLDB submission).
+论文 *Complex Count Sketch: Mergeable Frequency-Moment and p-Star Join Size
+Estimation*(PVLDB)的可复现实验包:自带全部所需数据,一个共享核心库,
+20 个实验脚本与归档结果。
 
-Everything the paper's tables and experiments need, self-contained: the
-scripts, the data, and the archived production logs that produced the
-published numbers.  The scattered scripts of the original repository
-(`paper_code/python/`, `paper_code/experiments/`, `paper_code/cpp/`,
-`experiment/`) are reorganised here into five layers.
+## 目录
 
 ```
 Complex_Count_Sketch/
-├── ccs.py               # core library: hashing / sketches / estimators /
-│                        #   T-MCCS / exact verification utilities /
-│                        #   user-facing API (ComplexCountSketch)
-├── loaders.py           # data layer: uniform accessors for the bundled
-│                        #   gzip column files
-├── examples/            # standalone, runnable CCS demos (start here!)
-├── tests/               # test_api.py: pins the user-facing API to the
-│                        #   paper's own estimator bit-for-bit
-├── tables/              # paper Tables 2-5, Figures 1-2, cell-by-cell audit
-│   ├── table2_lpnorm.py         Table 2 (4 synthetic + ML/Airlines/Kasandr)
-│   ├── table2_archive_audit.py  Table 2: paper values vs C++ archived logs
-│   ├── table3_tmccs.py          Table 3 (CCS vs T-MCCS vs Fixed20/Rand20)
-│   ├── table4_pstar.py          Table 4 (p-star: CCS/T-MCCS/G-A + baselines)
-│   ├── table5_realccs.py        Table 5 (real 3-star + 2-join, orders p>=3)
-│   ├── figures.py               Figure 1 (width sweep) + Figure 2 (regime)
-│   └── figs_out/                rendered figures (PDF + PNG)
-├── experiments/         # the paper's other 16 experiments (exp2..exp18)
-├── cpp/                 # original 2024 C++ pipeline (Table 2, Table 5 ref.)
-├── data/                # all data (409 MB, gzip column views, byte-identical)
-└── results/             # archived production logs + this port's outputs
-    ├── table{2,3,4,5}/  archived logs for the paper tables (audit baseline)
-    ├── experiments/     archived logs for the paper experiments
-    └── figures/         archived data for Figure 1 (exp8b)
+├── ccs.py            # 核心库:草图构建 / 各估计器 / T-MCCS / 精确验证工具
+├── loaders.py        # 数据加载(gzip 透明解压;Kasandr 预提取 npz)
+├── data/             # 全部数据(约 330 MB,含来源说明,见 data/README.md)
+│   ├── ML/ratings/*.gz, ML/tags/*.gz     # MovieLens 列文件
+│   ├── airlines/*.gz                     # Airlines 10 列
+│   ├── lp/*.gz                           # 合成列(uniform/zipf1.1/zipf1.5 ×3)
+│   └── kasandr_essential.npz             # Kasandr users/cats/times 预提取
+├── experiments/      # 20 个实验脚本(与论文位置一一对应,见下表)
+└── results/          # 归档输出;legacy/ 为初版实验套件的原始输出
 ```
 
-## Quick start
+## 快速查阅
 
-Environment: Python 3.11 + numpy 1.26.4 + matplotlib 3.10 (see
-"Environment").  No network access is needed; all data is bundled.
+外层笔记本 `ccs_notebook.ipynb`(随发布一起提供)是全部核心实验的
+可执行走读版:草图机制、方差核验、实数乘子、F_p 扫描、T-MCCS、
+p-star 基线、MovieLens 一个部署三个任务、错位实验,已带运行输出。
+
+## 运行
 
 ```bash
-cd Complex_Count_Sketch
-
-# --- use CCS on your own data -------------------------------------------
-python3 examples/quickstart.py       # ~3 s    F_p of a stream, in 3 lines
-python3 examples/join_demo.py        # ~30 s   3-way star and 2-way joins
-python3 examples/tmccs_demo.py       # ~2 s    when truncating on |Im| pays
-python3 examples/one_deployment.py   # ~2 s    one sketch, three tasks
-python3 tests/test_api.py            # ~20 s   API consistency checks
-
-# --- reproduce the paper's tables (each script runs standalone) ---------
-python3 tables/table2_lpnorm.py            # Table 2, ~8 min
-python3 tables/table3_tmccs.py             # Table 3, ~4 min
-python3 tables/table4_pstar.py             # Table 4, ~45 min
-python3 tables/table5_realccs.py           # Table 5, ~6 min
-python3 tables/figures.py                  # Figures 1/2 from archives, seconds
-python3 tables/figures.py --recompute      # recompute + verify, ~2 min
-
-# --- the paper's other experiments --------------------------------------
-python3 experiments/run_all.py --list      # the 16 steps and their cost
-python3 experiments/run_all.py exp11 exp16 # run chosen steps, then audit
-python3 experiments/run_all.py             # everything (~2.5 h)
-
-# --- C++ (needs g++) ----------------------------------------------------
-bash experiments/exp5_join2_matched.sh     # JoinSketch at matched budget, ~6 min
-bash experiments/exp7_update_bench.sh      # update throughput, ~1 min
+cd experiments
+python3 run_all.py exp01_fp_skew      # 单个实验
+python3 run_all.py                    # 全部(数小时)
 ```
 
-Every table script ends by printing a **facsimile** of the published table:
-the reproduced value next to the published value, cell by cell, marked as a
-match or a difference.  The archived log each number came from is bundled
-under `results/` and can be re-checked independently.
+依赖:numpy(scipy 仅 exp05/exp07 需要)。
 
-## Using CCS as a library
+## 实验与论文对照
 
-Three lines, no data files, no paper context required:
-
-```python
-import numpy as np, ccs
-
-sk = ccs.ComplexCountSketch(p=3, width=1024, depth=8, seed=1)
-sk.update(stream)          # stream: iterable of keys (str / bytes / int)
-print(sk.estimate())       # -> F_3 estimate
-```
-
-`update` is additive, so a stream can arrive in chunks and sketches built on
-different machines merge without sharing the data (`sketch_a + sketch_b`).
-One-call helpers cover the two headline use cases:
-
-```python
-ccs.fp_estimate(keys, counts, p=3, eps=0.1, gam=0.01, seed=1)
-ccs.star_estimate(F, p=3, width=256, seed=1)      # k-way star join size
-ccs.join2_estimate(R, S, p=4, width=1024, seed=1) # 2-way join size
-sk.estimate("tmccs")                              # truncated-median variant
-```
-
-See `examples/README.md` for the full API and the measured output of each
-demo.  `tests/test_api.py` pins this API to `ccs.cpp_ccs_estimate`
-bit-for-bit, so the ergonomic wrapper is not a second implementation.
-
-## Environment
-
-- Reference: Python 3.11 + numpy 1.26.4 + matplotlib 3.10.0 (the ports were
-  developed and verified in a `conda` env named `py311`; any Python 3.9+
-  interpreter with numpy >= 1.17 works, only the bit-exactness claims below
-  depend on the exact numpy version).
-- RNG: everything uses `numpy.random.default_rng` (PCG64).  `Generator`'s
-  integer draws and `choice(p=...)` are bit-identical across numpy
-  1.17-1.26, so all "bit-exact" claims here were measured under numpy
-  1.26.4.  **exp4 is the single exception**: its archived values were
-  produced under an older numpy and the absolute values drift under the
-  current one.  The paper only claims a *directional* conclusion from that
-  experiment and that conclusion holds; see the disclosure in
-  `experiments/exp4_equal_budget.py`.
-- C++ needs `g++` (Apple Clang on macOS); the drivers depend only on the
-  C++11/14 standard library.
-
-## Data (data/, 409 MB)
-
-| Content | Files | Used by |
+| 脚本 | 论文位置 | 内容 |
 |---|---|---|
-| synthetic Lp columns | `lp/{uniform,zipf1.1,zipf1.5}.dat{,2,3}.gz`, `lp/uniform+zipf1.1.dat.gz` | Tables 2/3/4, exp9/exp13/exp18 |
-| MovieLens | `ML/ratings/{userId,movieId,rating}.gz`, `ML/tags/{userId,movieId}.gz` | Tables 2/5, exp1/exp9/exp12/exp14/exp15 |
-| Airlines | `airlines/*.gz` (10 columns) | Tables 2/5, exp15 |
-| Kasandr | `kasandr_essential.npz` (users/cats/times), `kasandr_extra_columns.npz` (distinct views of offerid/countrycode/merchant), `kasandr_columns/*.kc.tsv.gz` (7-column merge views) | Tables 2/4/5, exp2/exp9/exp12/exp15 |
+| exp01_fp_skew | §5.2 表 2 CCS 列 | 合成数据 F_p + 宽度扫描 + CI |
+| exp02_tmccs_table | §5.4 表 4 | median / T-MCCS / Fixed20 |
+| exp03_aggregators | §5.4 | median vs mean vs MoM vs T-MCCS |
+| exp04_pstar_baselines | §5.5 表 5 | p-star:CCS / per-edge / shared-sign |
+| exp05_misalignment | §5.5 | 固定边际、重频位移 L 网格 + 精确 Ψ |
+| exp06_pattern_check | §4.4 式(13) | 共址模式精确枚举验证 |
+| exp07_real_solutions | §4.2 | 实数乘子:精确解 + 精确期望 + 方差比 |
+| exp08_real_ml | §5.7 | MovieLens 真实连接(3-star) |
+| exp09_kasandr | §5.7 | Kasandr 错位 3-star + 基线 |
+| exp10_merge_delete | §5.9 | 16 站点合并 + 删除 |
+| exp12_ganguly_attribution | §5.2 | Ganguly 差距归因 2×2(分配×聚合) |
+| exp13_joint_workload | §5.8 | 一套草图答 F3/2-join/3-star |
+| exp14_equal_budget | §5.2 | CCS 缩至 AMS 预算 |
+| exp15_five_star | §5.7 | 五表 star(order-5) |
+| exp16_bridge_demo | §5.7 | 桥接连接(卷积 + 素数步长投影) |
+| exp19_tmccs_on_peredge | §5.5 信号边界 | 能量代理与行误差负相关(−0.22):虚部信号不可移植到实数方案 |
+| exp20_fp_sizing | §5.3 表 3 | F_p sizing:闭式系数、prior/fixed/ideal/pilot、150 部署/行 |
+| exp21_star_sizing | §5.6 表 6 | 3-star sizing:A、B 线性时间展开 + floor 不可行证书 |
+| exp22_single_state_real3 | §5.8 表 7 | 单状态 real-3 与 CCS 的七任务联合达标比较(E_max 协议) |
 
-### Provenance and redistribution
+脚本编号存在空缺(exp11、exp17、exp18),对应初版套件中已从论文删除或
+并入其他实验的条目;`results/legacy/` 保留了初版套件的原始输出,
+文件名沿用当时的编号。
 
-The three real datasets are third-party.  This repository redistributes only
-the **derived column projections** actually consumed by the scripts
-(gzip-compressed columns and `.npz` views), not the datasets as published:
+## 数据来源与再生成
 
-| Dataset | Source | Cite |
-|---|---|---|
-| MovieLens 25M | GroupLens Research, University of Minnesota | Harper & Konstan, *ACM TIIS* 5(4):19, 2015 |
-| Airlines | OpenML dataset 42728 (Airlines Departure Delay) | <https://www.openml.org/d/42728> |
-| Kasandr | Sidana, Laclau, Amini, Vandelle, Bois-Crettez — SIGIR 2017, pp. 1245–1248 | doi via the SIGIR 2017 proceedings |
+- MovieLens:Harper & Konstan (2015),按列切分,打包为 gzip。
+- Airlines:OpenML 42728,按列切分,gzip。
+- Kasandr:Sidana et al. (2017) train_de.csv(2.9 GB);发布包仅保留
+  userid/category/timestamp 三列的整数编码(`kasandr_essential.npz`,
+  53 MB),与原 CSV 逐行对应。
+- 合成列(lp/*.dat*):10^7 整数/列,原生成脚本未固定种子,故发布包
+  直接打包原始文件(gzip);`data/README.md` 有逐文件基数与峰值频数。
 
-Redistribution note: the bundled files are derived views, and no upstream
-license files are shipped with them.  If you re-publish this repository,
-check each dataset's own terms of use (MovieLens is distributed by GroupLens
-for research use) and cite the dataset papers above alongside ours.
+## results/ 的构成与论文数值的对应
 
-The synthetic Lp columns are committed **on purpose** and cannot be
-regenerated: the original generator (`random.randint` / `np.random.zipf`,
-10^7 draws per column) ran **unseeded**, so the bundled `.gz` files are the
-only surviving record of those streams.  Re-seeding a generator now would
-produce different data and different table numbers, so please do not
-"optimise" them out of the repository — Tables 2 and 4 depend on them.
-
-Every bundled file is **byte-identical** to the original used for the paper
-(md5-checked; the nine Lp `.dat` files were compared one by one with `cmp`).
-Kasandr's user/category columns are numbered by first appearance and `times`
-is a YYYYMMDD integer, exactly as the original `load()` produced them.  The
-plaintext datasets the C++ pipeline reads (~2 GB) are not bundled;
-`experiments/exp5_join2_matched.sh` shows how to materialise one on the fly
-from the bundled gzip columns.
-
-## Reproduction status 
-
-**Bit-exact**
-
-| Object | Scope | Archived baseline |
-|---|---|---|
-| Table 2 | all 42 CCS cells match the published values; p=4/p=5 synthetic and every p on ML/Airlines/Kasandr match the C++ logs bit-for-bit | `results/table2/` |
-| Table 3 | 83/84 cells (plain / T-MCCS / Fixed20 / Rand20 / G-A / wins) | `results/table3/` |
-| Table 4 | after the fix below, 6 combinations x all columns and diagnostics | `results/table4/rev_pstar_full.txt` |
-| Table 5 | 3-star rows + Count Sketch columns (T=24, full protocol) | `results/table5/` |
-| Figures 1/2 | 15 + 36 recomputed data points all match the archives (3 significant digits) | `results/figures/`, `results/table3/` |
-| exp2/3b/6/11/12/13/14/15/16/17/18 | full protocol | `results/experiments/` |
-| exp5 (C++ JoinSketch) | bit-exact at matched budget | `results/experiments/exp5_join2_matched.expected.txt` |
-| exp9 | the 6 synthetic combinations are covered by the Table 4 full-protocol run; the standalone full run was stopped at the 5th combination to free the machine for 
-**Disclosed gaps and differences**
-
-1. **Table 5, CCS p=3/4/5 columns.** The original run behind those columns
-   was never archived, and neither of the two seed conventions we tried
-   reproduces the published values.  The script reproduces the closest
-   protocol and **labels the column as reference, not reproduction** (see the
-   docstring of `tables/table5_realccs.py` and its facsimile output).
-2. **Table 3, Fixed20 (p=3, alpha=1.0).** The paper says 2.00E-03; the
-   archived log says 2.454e-03.  This package reproduces the archived value;
-   the paper entry looks like a transcription slip, and the boldface
-   conclusion in that row is unaffected.
-3. **Table 2, AMS column.** The C++ pipeline draws its positions from
-   `std::random_device`, so the AMS column is not reproducible by
-   construction and takes no part in the cell-by-cell audit.  The CCS column
-   is unaffected.
-4. **exp4 absolute values.** Produced under an older numpy; they drift in the
-   current environment.  The directional claim holds (the original producer
-   only checked direction as well).
-5. **exp7 throughput.** Machine dependent (original Linux server vs this
-   machine); only the ordering CS > CCS > AMS is checked.
-6. **A conjugation bug caught during the Table 4 port.** The first version of
-   `table4_pstar.py` wrote the imaginary part of its inline complex product
-   as `pr*ci + pi*ci` (correct: `pr*ci + pi*cr`).  The archived cross-check
-   caught it on the spot; after the fix the port is bit-exact with the
-   original producer `rev_pstar.py`.  This is the value of "get it running,
-   then reconcile against the archive" as a standing rule.
-
-
-
-## Subdirectory notes
-
-- `tables/README.md`: porting details, audit conventions and known gaps for
-  the table scripts.
-- `experiments/README.md`: paper mapping and porting notes for the 16
-  experiments.
-- `cpp/README.md`: building the C++ pipeline, its data, and its audit
-  conventions.
-- `examples/README.md`: the standalone CCS API and the measured output of
-  each demo.
+- `results/exp20_*.out`、`exp21_*.out`、`exp22_*.out` 由发布包内脚本
+  在论文协议下直接生成,可复跑复验。
+- `results/legacy/` 保存初版实验套件产生、且论文正文引用的原始输出
+  (Ganguly 四格、错位网格的 J/Ψ、合并删除、真实连接等);旧套件编号
+  与发布脚本编号不同,对应关系为 exp1→exp08、exp3→exp02、exp4→exp14、
+  exp11→exp06、exp13→exp05、exp14→exp10、exp16→exp07、exp17→exp12、
+  exp18→exp13。
+- AMS / PS-Lp / LpS / JoinSketch 列来自外部基线的原始实现,不在本包内
+  重跑;其数字与运行配置见 `results/legacy/` 与论文 §5.1。

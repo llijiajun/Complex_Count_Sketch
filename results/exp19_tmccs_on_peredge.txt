@@ -1,0 +1,6 @@
+per-edge plain median:                mean rel err = 0.001225
+per-edge energy-truncated (top-20%):  mean rel err = 0.001643
+truncated mean-of-rows |bias|/truth:  0.005378
+per-family Spearman(E_j, |row err|):  mean = -0.221
+reference CCS: plain = 0.002371   T-MCCS = 0.001459
+EXP19_DONE

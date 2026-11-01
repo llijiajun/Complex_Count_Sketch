@@ -1,6 +1,0 @@
-Ganguly configs: B=100  equal-space s1=655  prescribed s1=94478399 (space 144163x CCS)
-zipf1.1 k=3: CCS(w=1024,d=64) mean=8.424e-04 med=8.259e-04 | Ganguly equal-space mean=3.250e-03 med=2.496e-03
-zipf1.5 k=3: CCS(w=1024,d=64) mean=3.766e-05 med=3.354e-05 | Ganguly equal-space mean=3.923e-03 med=2.733e-03
-uniform k=3: CCS(w=1024,d=64) mean=2.524e-02 med=1.606e-02 | Ganguly equal-space mean=6.058e-02 med=5.010e-02
-mix k=3: CCS(w=1024,d=64) mean=1.574e-03 med=1.850e-03 | Ganguly equal-space mean=3.383e-03 med=2.979e-03
-EXP6_EXIT 0

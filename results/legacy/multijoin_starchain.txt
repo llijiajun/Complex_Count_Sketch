@@ -1,0 +1,7 @@
+# mode=starchain  D1=64 D2=64 n_side=20000 n_bridge=4000 W=2048 d=32 trials=20
+distribution                  truth      CCS p=3      CCS p=2     RealConv    p3 err    p2 err   real err
+uniform x uniform        1.2255e+11   1.2203e+11   1.2011e+08   1.2091e+11    0.0112    0.9990     0.0154
+uniform x zipf1.1        7.1382e+11   7.0978e+11  -2.9172e+08   7.0841e+11    0.0099    1.0004     0.0111
+zipf1.1 x zipf1.1        5.2816e+13   5.2770e+13   3.5866e+11   5.2833e+13    0.0011    0.9932     0.0012
+zipf1.1 x zipf1.5        1.3234e+14   1.3231e+14   1.2714e+11   1.3236e+14    0.0004    0.9990     0.0004
+zipf1.5 x zipf1.5        5.4276e+14   5.4266e+14   2.1197e+12   5.4282e+14    0.0002    0.9961     0.0002
